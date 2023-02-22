@@ -6,6 +6,8 @@ from core.models.teachers import Teacher
 from core.models.students import Student
 from sqlalchemy.types import Enum as BaseEnum
 
+from marshmallow.exceptions import ValidationError
+
 
 class GradeEnum(str, enum.Enum):
     A = 'A'
@@ -65,6 +67,7 @@ class Assignment(db.Model):
         assertions.assert_found(assignment, 'No assignment with this id was found')
         assertions.assert_valid(assignment.student_id == principal.student_id, 'This assignment belongs to some other student')
         assertions.assert_valid(assignment.content is not None, 'assignment with empty content cannot be submitted')
+        assertions.assert_valid(assignment.state == AssignmentStateEnum.DRAFT, 'only a draft assignment can be submitted')
 
         assignment.teacher_id = teacher_id
         assignment.state = AssignmentStateEnum.SUBMITTED
@@ -84,6 +87,10 @@ class Assignment(db.Model):
     def grade_assignment(cls, _id, grade, principal: Principal):
         assignment = Assignment.get_by_id(_id)
         assertions.assert_found(assignment, 'No assignment with this id was found')
+        # assertions.assert_valid(grade in iter(AssignmentStateEnum), '${grade} is not a valid grade')
+        assertions.assert_valid(assignment.teacher_id == principal.teacher_id, 'cannot submit to this teacher')
+        if grade not in iter(AssignmentStateEnum):
+            raise ValidationError('${grade} is  not a valid grade')
 
         assignment.grade = grade
         assignment.state = AssignmentStateEnum.GRADED
