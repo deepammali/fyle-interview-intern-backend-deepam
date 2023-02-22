@@ -79,3 +79,15 @@ class Assignment(db.Model):
     @classmethod
     def get_assignments_by_submitted_student(cls, teacher_id):
         return cls.filter(cls.teacher_id == teacher_id).all()
+
+    @classmethod
+    def grade_assignment(cls, _id, grade, principal: Principal):
+        assignment = Assignment.get_by_id(_id)
+        assertions.assert_found(assignment, 'No assignment with this id was found')
+
+        assignment.grade = grade
+        assignment.state = AssignmentStateEnum.GRADED
+        db.session.flush()
+
+        return assignment
+
